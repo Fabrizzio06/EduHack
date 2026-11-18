@@ -48,11 +48,11 @@ var Zip;
               <button type="button" class="z-clave-ver" id="z-ver-clave" aria-pressed="false" aria-controls="z-clave">Mostrar</button></div></div>
           <p class="z-login-error" id="z-login-error" role="alert"></p>
           <button class="btn btn-principal z-login-entrar" type="submit" data-ripple>${reg ? 'Crear mi cuenta' : 'Entrar'} ${flecha}</button>
-          <div class="z-demo">
+          ${reg ? '' : `<div class="z-demo">
             <div><span class="mono">${reg ? 'Datos de prueba' : 'Cuenta de prueba'}</span>
               <p>Usuario <code>${esc(demo.usuario)}</code> · Contraseña <code>${esc(demo.clave)}</code></p></div>
             <button type="button" class="btn btn-sec btn-chico" id="z-rellenar" data-ripple>Usar estos datos</button>
-          </div>
+          </div>`}
           <p class="z-cambiar">${reg ? '¿Ya tienes cuenta? <a href="#login">Entra aquí</a>' : '¿Eres nuevo? <a href="#registro">Crea tu cuenta</a>'}</p>
           <p class="z-nota">Prototipo sin base de datos: tu cuenta, tu sesión y tu progreso viven solo en esta pestaña y se borran al cerrarla.</p>
         </form>

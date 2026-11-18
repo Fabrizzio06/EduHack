@@ -71,7 +71,7 @@ namespace Zip.Rutas {
       ver.setAttribute('aria-pressed', String(mostrarla));
       clave.focus();
     };
-    $('#z-rellenar').onclick = () => {
+    if (!reg) $('#z-rellenar').onclick = () => {
       usuario.value = demo.usuario; clave.value = demo.clave; limpiar();
       $<HTMLButtonElement>('.z-login-entrar').focus();
     };

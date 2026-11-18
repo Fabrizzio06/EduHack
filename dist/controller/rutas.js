@@ -84,12 +84,13 @@ var Zip;
                 ver.setAttribute('aria-pressed', String(mostrarla));
                 clave.focus();
             };
-            $('#z-rellenar').onclick = () => {
-                usuario.value = demo.usuario;
-                clave.value = demo.clave;
-                limpiar();
-                $('.z-login-entrar').focus();
-            };
+            if (!reg)
+                $('#z-rellenar').onclick = () => {
+                    usuario.value = demo.usuario;
+                    clave.value = demo.clave;
+                    limpiar();
+                    $('.z-login-entrar').focus();
+                };
             form.onsubmit = ev => {
                 ev.preventDefault();
                 const r = reg ? Auth.registrar(usuario.value, clave.value) : Auth.iniciarSesion(usuario.value, clave.value);
