@@ -377,7 +377,34 @@ var Zip;
             if (c)
                 c.innerHTML = Auth.activa() && P.actual() ? V.continuar(P, Auth.actual().nombre) : '';
         }
+        /* ---------- Transiciones entre páginas (Material Design 3) ----------
+           Más profundo → eje compartido X hacia adelante; menos profundo → hacia atrás;
+           mismo nivel → fade through. Las secciones de la landing no cuentan como página. */
+        let paginaPrevia = '', quitarPagNueva = 0;
+        const profundidad = (r) => !r || r === 'inicio' || !(RUTAS.includes(r) || CON_PARAMETRO.includes(r)) ? 0
+            : r === 'login' || r === 'registro' || r === 'conocerte' ? 1
+                : r === 'exp' || r === 'modulo' ? 3 : 2;
         function ruta() {
+            const h = decodeURIComponent((location.hash || '#inicio').slice(1));
+            const r = h.split('/')[0];
+            const pagina = profundidad(r) === 0 ? 'inicio' : h;
+            const previa = paginaPrevia;
+            paginaPrevia = pagina;
+            const raiz = document.documentElement;
+            if (!previa || previa === pagina || !document.startViewTransition || !raiz.classList.contains('anim') || P.bajoEstimulo()) {
+                pintar();
+                return;
+            }
+            const antes = profundidad(previa.split('/')[0]), despues = profundidad(r);
+            raiz.dataset.dir = despues > antes ? 'adelante' : despues < antes ? 'atras' : 'fade';
+            raiz.classList.add('vt', 'pag-nueva');
+            clearTimeout(quitarPagNueva);
+            quitarPagNueva = setTimeout(() => raiz.classList.remove('pag-nueva'), 900);
+            const t = document.startViewTransition(() => { pintar(); });
+            t.finished.finally(() => { raiz.classList.remove('vt'); delete raiz.dataset.dir; });
+        }
+        Rutas.ruta = ruta;
+        function pintar() {
             const h = decodeURIComponent((location.hash || '#inicio').slice(1));
             const [r, p] = h.split('/');
             const dePlataforma = CON_PARAMETRO.includes(r) || (RUTAS.includes(r) && !['inicio', 'login', 'registro'].includes(r));
@@ -435,7 +462,6 @@ var Zip;
             else if (venia || r === 'inicio')
                 scrollTo(0, 0);
         }
-        Rutas.ruta = ruta;
         function aplicarEstimulo(bajo) {
             if (bajo)
                 document.documentElement.setAttribute('data-estimulo', 'bajo');

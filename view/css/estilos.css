@@ -1077,3 +1077,34 @@ html[data-estimulo="bajo"] .marquesina ul{flex-wrap:wrap}
 html[data-estimulo="bajo"] .marquesina .copia{display:none}
 html[data-estimulo="bajo"] .titulo-vf .letra{--w:800!important;--y:0!important}
 html[data-estimulo="bajo"] .ripple{display:none}
+
+/* =====================================================================
+   Zip · VIEW · Transiciones de página (Material Design 3 · View Transitions)
+   Eje compartido X al entrar/salir de niveles, fade through entre hermanas.
+   La cabecera y la barra inferior se quedan quietas.
+   ===================================================================== */
+.cabecera{view-transition-name:cabecera}
+.barra-inferior{view-transition-name:barra-inferior}
+html.vt .vista.entra{animation:none}   /* la transición ya anima la página */
+::view-transition-group(root){animation-duration:var(--md-media4)}
+/* Fade through: sale rápido y entra con un leve zoom */
+html[data-dir="fade"]::view-transition-old(root){animation:md-sale var(--md-corta2) var(--md-curva-estandar-acelera) both}
+html[data-dir="fade"]::view-transition-new(root){animation:md-fade-entra 300ms var(--md-curva-enfatizada-desacelera) var(--md-corta2) both}
+/* Eje compartido X */
+html[data-dir="adelante"]::view-transition-old(root){animation:md-x-sale-izq var(--md-media2) var(--md-curva-enfatizada) both}
+html[data-dir="adelante"]::view-transition-new(root){animation:md-x-entra-der var(--md-media4) var(--md-curva-enfatizada-desacelera) both}
+html[data-dir="atras"]::view-transition-old(root){animation:md-x-sale-der var(--md-media2) var(--md-curva-enfatizada) both}
+html[data-dir="atras"]::view-transition-new(root){animation:md-x-entra-izq var(--md-media4) var(--md-curva-enfatizada-desacelera) both}
+@keyframes md-sale{to{opacity:0}}
+@keyframes md-fade-entra{from{opacity:0;transform:scale(.92)}}
+@keyframes md-x-sale-izq{to{opacity:0;transform:translateX(-30px)}}
+@keyframes md-x-entra-der{from{opacity:0;transform:translateX(30px)}}
+@keyframes md-x-sale-der{to{opacity:0;transform:translateX(30px)}}
+@keyframes md-x-entra-izq{from{opacity:0;transform:translateX(-30px)}}
+/* Al llegar a una página, sus bloques entran escalonados */
+html.anim.pag-nueva #app .z-pagina > *{animation:md-bloque var(--md-larga2) var(--md-curva-enfatizada-desacelera) both}
+html.anim.pag-nueva #app .z-pagina > :nth-child(2){animation-delay:60ms}
+html.anim.pag-nueva #app .z-pagina > :nth-child(3){animation-delay:120ms}
+html.anim.pag-nueva #app .z-pagina > :nth-child(n+4){animation-delay:180ms}
+@keyframes md-bloque{from{opacity:0;transform:translateY(16px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
