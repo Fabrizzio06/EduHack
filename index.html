@@ -272,7 +272,7 @@
           <span class="jalador"></span>
         </div>
         <ol class="pasos">
-          <li class="paso" data-r><span class="num">Paso 01 · Elige</span><h3>Inscríbete a una experiencia</h3><p>Cada experiencia se enfoca en una competencia y está diseñada por especialistas en educación y expertos en esa habilidad. Tú eliges la que te importa.</p><div class="ejemplo"><span>Liderazgo</span><span>Comunicación</span><span>Pensamiento crítico</span><span>Resolución de problemas</span></div></li>
+          <li class="paso" data-r><span class="num">Paso 01 · Elige</span><h3>Inscríbete a una experiencia</h3><p>Cada experiencia se enfoca en una competencia y está diseñada por especialistas en educación y expertos en esa habilidad. Tú eliges la que te importa.</p><div class="ejemplo"><span>Profesionalismo</span><span>Comunicación</span><span>Adaptabilidad</span><span>Pensamiento crítico</span><span>Liderazgo</span></div></li>
           <li class="paso" data-r><span class="num">Paso 02 · Aprende</span><h3>Por tu cuenta y en comunidad</h3><p>Cada módulo trae materiales para estudiar a tu ritmo, talleres colaborativos y sesiones de diálogo para intercambiar perspectivas con otros.</p></li>
           <li class="paso" data-r><span class="num">Paso 03 · Aplica</span><h3>En tu vida real, con tu coach</h3><p>Tu coach te ayuda a diseñar retos o proyectos relevantes para ti, y tu tutor IA te ayuda a reflexionar sobre cómo te fue.</p></li>
           <li class="paso" data-r><span class="num">Paso 04 · Demuestra</span><h3>Con evidencia de lo que haces</h3><p>Evaluaciones por módulo, seguimiento continuo y una bitácora que documenta tu trayectoria. Al final, tu coach te evalúa para la certificación.</p></li>
@@ -371,13 +371,14 @@
     <div class="contenedor">
       <div class="enc">
         <h2 id="t-cat" data-r>Elige tu experiencia.</h2>
-        <p data-r>Diseñadas por especialistas en educación y expertos en cada competencia. Toca una para ver sus módulos e inscribirte.</p>
+        <p data-r>Cinco experiencias, una por competencia. Al crear tu cuenta, el zorro te hace unas preguntas y las ordena según lo que más necesitas.</p>
       </div>
       <ul class="exp-atajos">
-        <li data-r><a class="t1" href="#exp/comunicacion" data-ripple><span class="mono">Disponible</span><strong>Comunicación que convence</strong></a></li>
-        <li data-r><a class="t2" href="#exp/liderazgo" data-ripple><span class="mono">Vista previa</span><strong>Liderazgo en la práctica</strong></a></li>
-        <li data-r><a class="t3" href="#exp/pensamiento" data-ripple><span class="mono">Vista previa</span><strong>Pensamiento crítico</strong></a></li>
-        <li data-r><a class="t4" href="#exp/problemas" data-ripple><span class="mono">Vista previa</span><strong>Resolver problemas reales</strong></a></li>
+        <li data-r><a class="t1" href="#exp/profesionalismo" data-ripple><span class="mono">Experiencia 1</span><strong>Profesionalismo y ética laboral</strong></a></li>
+        <li data-r><a class="t2" href="#exp/comunicacion" data-ripple><span class="mono">Experiencia 2 · disponible</span><strong>Comunicación y trabajo en equipo</strong></a></li>
+        <li data-r><a class="t3" href="#exp/adaptabilidad" data-ripple><span class="mono">Experiencia 3</span><strong>Adaptabilidad y disposición para aprender</strong></a></li>
+        <li data-r><a class="t4" href="#exp/pensamiento" data-ripple><span class="mono">Experiencia 4</span><strong>Pensamiento crítico y resolución de problemas</strong></a></li>
+        <li data-r><a class="t1" href="#exp/liderazgo" data-ripple><span class="mono">Experiencia 5</span><strong>Liderazgo e influencia</strong></a></li>
       </ul>
       <div class="cat-pie" data-r>
         <p>¿No sabes por cuál empezar? <button type="button" class="enlace-bot" data-abrir-bot>Pregúntale al asesor</button> y te recomienda una.</p>
@@ -486,7 +487,7 @@
       <a href="#">Aviso de privacidad</a>
       <a href="#">Términos</a>
     </nav>
-    <p class="pie-prototipo">Prototipo del equipo Zip. El tutor de IA y el coach están simulados; las salas de diálogo usan Jitsi Meet (código abierto). Los repasos se programan con ts-fsrs (código abierto, licencia MIT). No hay base de datos: tu sesión y lo que escribes se guardan solo en esta pestaña del navegador.</p>
+    <p class="pie-prototipo">Prototipo del equipo Zip. El diagnóstico por voz usa Gemini; el tutor de IA y el coach están simulados; las salas de diálogo usan Jitsi Meet (código abierto). Los repasos se programan con ts-fsrs (código abierto, licencia MIT). No hay base de datos: tu sesión y lo que escribes se guardan solo en esta pestaña del navegador.</p>
   </div>
 </footer>
 
@@ -540,7 +541,9 @@
 <script src="dist/view/chat.js"></script>
 <script src="dist/view/mascota.js"></script>
 <script src="dist/view/pantallas.js"></script>
+<script src="dist/view/conocerte.js"></script>
 <script src="dist/controller/app.js"></script>
+<script src="dist/controller/conocerte.js"></script>
 <script src="dist/controller/rutas.js"></script>
 
 <!-- Repaso espaciado: ts-fsrs (código abierto, MIT), versión fija desde jsDelivr. Expone window.FSRS. -->
