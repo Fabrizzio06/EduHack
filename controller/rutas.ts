@@ -15,7 +15,7 @@ namespace Zip.Rutas {
   const Auth = Zip.Auth;
 
   type Vistas = 'experiencias' | 'mi' | 'camino' | 'repaso' | 'bitacora' | 'trayectoria' | 'coach';
-  const RUTAS = ['inicio', 'login', 'experiencias', 'mi', 'camino', 'repaso', 'bitacora', 'trayectoria', 'coach'];
+  const RUTAS = ['inicio', 'login', 'registro', 'conocerte', 'experiencias', 'mi', 'camino', 'repaso', 'bitacora', 'trayectoria', 'coach'];
   /** Rutas de la plataforma con parámetro (#exp/<id>, #modulo/<n>). */
   const CON_PARAMETRO = ['exp', 'modulo'];
   const NAV: Record<string, string> = { camino: 'mi', repaso: 'mi' };   /* qué pestaña del menú se marca en cada ruta */
@@ -54,9 +54,12 @@ namespace Zip.Rutas {
     if (caja) caja.innerHTML = V.sesion(Auth.actual());
   }
 
-  function login(): void {
+  /** Entrar o crear cuenta: la misma pantalla con dos modos. */
+  function cuenta(modo: 'login' | 'registro'): void {
+    const reg = modo === 'registro';
     if (Auth.activa()) { irA(pendiente || 'experiencias', true); pendiente = null; return; }
-    app.innerHTML = V.login(Auth.DEMO);
+    const demo = reg ? Auth.DEMO_REGISTRO : Auth.DEMO;
+    app.innerHTML = V.cuenta(modo, demo);
     const form = $<HTMLFormElement>('#z-login'), usuario = $<HTMLInputElement>('#z-usuario'), clave = $<HTMLInputElement>('#z-clave');
     const error = $('#z-login-error'), ver = $<HTMLButtonElement>('#z-ver-clave');
     const limpiar = () => { error.textContent = ''; [usuario, clave].forEach(i => i.removeAttribute('aria-invalid')); };
@@ -69,21 +72,24 @@ namespace Zip.Rutas {
       clave.focus();
     };
     $('#z-rellenar').onclick = () => {
-      usuario.value = Auth.DEMO.usuario; clave.value = Auth.DEMO.clave; limpiar();
+      usuario.value = demo.usuario; clave.value = demo.clave; limpiar();
       $<HTMLButtonElement>('.z-login-entrar').focus();
     };
     form.onsubmit = ev => {
       ev.preventDefault();
-      const r = Auth.iniciarSesion(usuario.value, clave.value);
+      const r = reg ? Auth.registrar(usuario.value, clave.value) : Auth.iniciarSesion(usuario.value, clave.value);
       if (r.ok === false) {
         error.textContent = r.error;
         const vacio = !usuario.value.trim() ? usuario : (!clave.value ? clave : null);
-        (vacio ? [vacio] : [usuario, clave]).forEach(i => i.setAttribute('aria-invalid', 'true'));
+        (vacio ? [vacio] : (reg ? [usuario] : [usuario, clave])).forEach(i => i.setAttribute('aria-invalid', 'true'));
         form.classList.remove('sacude'); void form.offsetWidth; form.classList.add('sacude');
-        (vacio || clave).focus(); if (!vacio) clave.select();
+        const foco = vacio || (reg ? usuario : clave); foco.focus(); if (!vacio) foco.select();
         return;
       }
       pintarSesion();
+      aplicarEstimulo(P.bajoEstimulo());
+      /* Cuenta nueva: primero conocer a la persona para armar su camino */
+      if (reg) { pendiente = null; irA('conocerte', true); return; }
       V.avisar(`Hola, ${r.usuario.nombre}. ¡Bienvenido a Zip!`);
       const destino = pendiente || 'experiencias';
       pendiente = null;
@@ -95,6 +101,7 @@ namespace Zip.Rutas {
   function salir(): void {
     Auth.cerrarSesion();
     pintarSesion();
+    aplicarEstimulo(P.bajoEstimulo());
     V.avisar('Cerraste tu sesión. ¡Vuelve pronto!');
     irA('inicio');
   }
@@ -115,6 +122,7 @@ namespace Zip.Rutas {
     app.innerHTML = V.detalle(k, e, P);
     const sel = $<HTMLSelectElement>('#z-ctx'), btn = $<HTMLButtonElement>('#z-ins');
     sel.onchange = () => { btn.disabled = !sel.value || k !== P.DISPONIBLE; };
+    sel.onchange(null);   /* el diagnóstico ya puede traer el lugar elegido */
     btn.onclick = () => { if (P.inscribir(k, sel.value)) { V.avisar(`Listo: ya estás en «${e.nombre}».`); location.hash = 'mi'; } };
   }
 
@@ -303,10 +311,12 @@ namespace Zip.Rutas {
   export function ruta(): void {
     const h = decodeURIComponent((location.hash || '#inicio').slice(1));
     const [r, p] = h.split('/');
-    const dePlataforma = CON_PARAMETRO.includes(r) || (RUTAS.includes(r) && r !== 'inicio' && r !== 'login');
+    const dePlataforma = CON_PARAMETRO.includes(r) || (RUTAS.includes(r) && !['inicio', 'login', 'registro'].includes(r));
+    Zip.Conocerte.salir();   /* suelta el micrófono si veníamos del diagnóstico */
     /* Sin sesión no se entra a la plataforma: primero el login y luego de vuelta a donde iba */
     if (dePlataforma && !Auth.activa()) { pendiente = h; irA('login', true); return; }
-    if (r === 'login') { marcarNav(''); mostrar(false); login(); arriba(); $('#z-usuario')?.focus({ preventScroll: true }); return; }
+    if (r === 'login' || r === 'registro') { marcarNav(''); mostrar(false); cuenta(r); arriba(); $('#z-usuario')?.focus({ preventScroll: true }); return; }
+    if (r === 'conocerte') { marcarNav(''); mostrar(false); document.documentElement.dataset.vista = 'conocerte'; scrollTo(0, 0); Zip.Conocerte.iniciar(app); return; }
     if (r === 'exp') { marcarNav('experiencias'); mostrar(false); detalle(p); arriba(); return; }
     if (r === 'modulo') { marcarNav('mi'); mostrar(false); modulo(p); arriba(); return; }
     if (dePlataforma) { marcarNav(NAV[r] || r); mostrar(false); VISTAS[r as Vistas](); arriba(); return; }
@@ -322,6 +332,8 @@ namespace Zip.Rutas {
   function aplicarEstimulo(bajo: boolean): void {
     if (bajo) document.documentElement.setAttribute('data-estimulo', 'bajo');
     else document.documentElement.removeAttribute('data-estimulo');
+    const sw = document.getElementById('bajo') as HTMLInputElement;
+    if (sw) sw.checked = bajo;
   }
 
   export function iniciar(): void {

@@ -59,14 +59,16 @@ var Zip;
             confirmar: '[CONFIRMAR]'
         });
         Modelo.EXPERIENCIAS = Object.freeze([
-            { id: 'liderazgo', nombre: 'Liderazgo', descripcion: 'guiar a otros sin imponerte',
-                claves: ['lider', 'liderar', 'equipo', 'jefe', 'jefa', 'guiar', 'cargo', 'gerente', 'coordinar'] },
-            { id: 'comunicacion', nombre: 'Comunicación', descripcion: 'decir lo que piensas con claridad y escuchar de verdad',
-                claves: ['hablar', 'comunic', 'presentar', 'exponer', 'conversa', 'escuchar', 'pena', 'nervio', 'publico'] },
-            { id: 'pensamiento', nombre: 'Pensamiento crítico', descripcion: 'decidir con argumentos y no con impulsos',
-                claves: ['decid', 'analiz', 'argument', 'pensar', 'critic', 'datos', 'evidencia'] },
-            { id: 'problemas', nombre: 'Resolver problemas reales', descripcion: 'definir problemas, encontrar causas y probar soluciones',
-                claves: ['problema', 'resolver', 'solucion', 'causa', 'atorad', 'mejorar un proceso'] }
+            { id: 'profesionalismo', nombre: 'Profesionalismo y ética laboral', descripcion: 'cumplir acuerdos, asumir responsabilidad y actuar con integridad',
+                claves: ['puntual', 'responsab', 'cumplir', 'compromis', 'etica', 'integridad', 'tarde', 'organiz', 'profesional'] },
+            { id: 'comunicacion', nombre: 'Comunicación y trabajo en equipo', descripcion: 'expresar ideas con claridad, escuchar y coordinarte con otras personas',
+                claves: ['hablar', 'comunic', 'presentar', 'exponer', 'conversa', 'escuchar', 'pena', 'nervio', 'publico', 'equipo', 'companer'] },
+            { id: 'adaptabilidad', nombre: 'Adaptabilidad y disposición para aprender', descripcion: 'ajustarte a los cambios e incorporar nuevas formas de trabajar',
+                claves: ['cambio', 'adapt', 'aprender', 'nuevo', 'herramienta', 'tecnolog', 'incertidumbre', 'estres'] },
+            { id: 'pensamiento', nombre: 'Pensamiento crítico y resolución de problemas', descripcion: 'evaluar información, comparar alternativas y justificar decisiones',
+                claves: ['decid', 'analiz', 'argument', 'pensar', 'critic', 'datos', 'evidencia', 'problema', 'resolver', 'solucion', 'causa'] },
+            { id: 'liderazgo', nombre: 'Liderazgo e influencia', descripcion: 'movilizar a otras personas hacia un objetivo común, incluso sin un cargo formal',
+                claves: ['lider', 'liderar', 'jefe', 'jefa', 'guiar', 'cargo', 'gerente', 'coordinar', 'convencer', 'influ', 'motivar'] }
         ]);
         Modelo.PLANES = Object.freeze([
             { id: 'comunidad', nombre: 'Comunidad', incluye: ['Materiales de aprendizaje autónomo', 'Talleres en comunidad'] },
@@ -104,7 +106,7 @@ var Zip;
             },
             ya: {
                 pregunta: 'Quiero empezar',
-                respuesta: '¡Va! Entra con tu cuenta, elige tu experiencia y te inscribes en un minuto: <a href="#login">empezar ahora</a>.'
+                respuesta: '¡Va! Crea tu cuenta, platica un momento con el zorro y armamos tu camino a tu medida: <a href="#registro">empezar ahora</a>.'
             }
         });
         Modelo.esClave = (k) => Object.prototype.hasOwnProperty.call(Modelo.PREGUNTAS, k);
@@ -212,38 +214,69 @@ var Zip;
     })(Modelo = Zip.Modelo || (Zip.Modelo = {}));
 })(Zip || (Zip = {}));
 /* =====================================================================
-   Zip.Auth · inicio de sesión (datos de prueba, sin base de datos)
+   Zip.Auth · cuentas e inicio de sesión (sin base de datos)
    ---------------------------------------------------------------------
-   Una sola cuenta de prueba. La sesión vive en sessionStorage: al cerrar
-   la pestaña se borra.
+   La cuenta de prueba (Pedro Paramo) ya existe; las nuevas se crean con
+   el registro (por ejemplo Fabri / 123). Cuentas y sesión viven en
+   sessionStorage: al cerrar la pestaña se borran.
    ===================================================================== */
 (function (Zip) {
     var Auth;
     (function (Auth) {
         /** Cuenta de prueba (se muestra en la pantalla de entrada). */
         Auth.DEMO = Object.freeze({ usuario: 'Pedro Paramo', clave: '123' });
-        const CUENTAS = Object.freeze([
-            { usuario: Auth.DEMO.usuario, clave: Auth.DEMO.clave, nombre: 'Pedro Paramo' }
+        /** Datos sugeridos para probar el registro. */
+        Auth.DEMO_REGISTRO = Object.freeze({ usuario: 'Fabri', clave: '123' });
+        const FIJAS = Object.freeze([
+            { usuario: Auth.DEMO.usuario, clave: Auth.DEMO.clave, nombre: 'Pedro Paramo', nueva: false }
         ]);
         const CLAVE = 'zip-sesion';
+        const CLAVE_CUENTAS = 'zip-cuentas';
         /** Ignora mayúsculas, acentos y espacios de más: «pedro  páramo» también entra. */
-        const comparable = (s) => Zip.Modelo.normalizar(s.trim().replace(/\s+/g, ' '));
+        Auth.comparable = (s) => Zip.Modelo.normalizar(s.trim().replace(/\s+/g, ' '));
+        const limpio = (s) => s.trim().replace(/\s+/g, ' ');
         const iniciales = (nombre) => nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+        const nuevas = () => Zip.Memoria.leer(CLAVE_CUENTAS) || [];
+        const cuentas = () => FIJAS.concat(nuevas());
+        const buscar = (usuario) => cuentas().find(c => Auth.comparable(c.usuario) === Auth.comparable(usuario));
         let sesion = Zip.Memoria.leer(CLAVE);
+        function abrir(c) {
+            sesion = { id: Auth.comparable(c.usuario), usuario: c.usuario, nombre: c.nombre, iniciales: iniciales(c.nombre), nuevo: c.nueva };
+            Zip.Memoria.escribir(CLAVE, sesion);
+            Zip.Plataforma.cambiarUsuario(sesion.id);
+            return sesion;
+        }
         function iniciarSesion(usuario, clave) {
             if (!usuario.trim() || !clave)
                 return { ok: false, error: 'Escribe tu usuario y tu contraseña.' };
-            const cuenta = CUENTAS.find(c => comparable(c.usuario) === comparable(usuario));
+            const cuenta = buscar(usuario);
             if (!cuenta || cuenta.clave !== clave)
                 return { ok: false, error: 'Usuario o contraseña incorrectos. Revisa la cuenta de prueba de abajo.' };
-            sesion = { usuario: cuenta.usuario, nombre: cuenta.nombre, iniciales: iniciales(cuenta.nombre) };
-            Zip.Memoria.escribir(CLAVE, sesion);
-            return { ok: true, usuario: sesion };
+            return { ok: true, usuario: abrir(cuenta) };
         }
         Auth.iniciarSesion = iniciarSesion;
+        /** Crea una cuenta nueva (solo usuario y contraseña) y entra con ella. */
+        function registrar(usuario, clave) {
+            const nombre = limpio(usuario);
+            if (!nombre || !clave)
+                return { ok: false, error: 'Escribe un usuario y una contraseña.' };
+            if (nombre.length < 2 || nombre.length > 40)
+                return { ok: false, error: 'Tu usuario debe tener entre 2 y 40 caracteres.' };
+            if (!/^[\p{L}\p{N} ._-]+$/u.test(nombre))
+                return { ok: false, error: 'Usa solo letras, números, espacios, puntos o guiones en tu usuario.' };
+            if (clave.length < 3)
+                return { ok: false, error: 'Tu contraseña debe tener al menos 3 caracteres.' };
+            if (buscar(nombre))
+                return { ok: false, error: 'Ese usuario ya existe en esta sesión. Entra con él o elige otro.' };
+            const cuenta = { usuario: nombre, clave, nombre, nueva: true };
+            Zip.Memoria.escribir(CLAVE_CUENTAS, nuevas().concat(cuenta));
+            return { ok: true, usuario: abrir(cuenta) };
+        }
+        Auth.registrar = registrar;
         function cerrarSesion() {
             sesion = null;
             Zip.Memoria.borrar(CLAVE);
+            Zip.Plataforma.cambiarUsuario(null);
         }
         Auth.cerrarSesion = cerrarSesion;
         Auth.actual = () => sesion;
@@ -260,9 +293,13 @@ var Zip;
 (function (Zip) {
     var Plataforma;
     (function (Plataforma) {
+        /** Las 5 experiencias (mismos ids que Zip.Modelo.EXPERIENCIAS). Solo «comunicacion» tiene contenido completo. */
         Plataforma.EXP = {
-            comunicacion: { nombre: 'Comunicación que convence', comp: 'Comunicación', semanas: 6,
-                desc: 'Aprende a estructurar una idea, escuchar objeciones y defenderla frente a un grupo.',
+            profesionalismo: { nombre: 'Profesionalismo y ética laboral', comp: 'Profesionalismo y ética laboral', semanas: 6,
+                desc: 'Cumple acuerdos, asume responsabilidad y actúa con integridad, aunque nadie esté viendo.',
+                modulos: [{ t: 'Acuerdos que sí se cumplen' }, { t: 'Responsabilidad cuando algo sale mal' }, { t: 'Integridad en decisiones grises' }] },
+            comunicacion: { nombre: 'Comunicación y trabajo en equipo', comp: 'Comunicación y trabajo en equipo', semanas: 6,
+                desc: 'Expresa ideas con claridad, escucha de verdad y coordínate con otras personas.',
                 modulos: [
                     { t: 'Estructura tu idea',
                         materiales: [
@@ -282,17 +319,17 @@ var Zip;
                             { p: '¿Cuál es el orden correcto de PREP?', o: ['Razón, Punto, Ejemplo, Punto', 'Punto, Razón, Ejemplo, Punto', 'Ejemplo, Punto, Razón, Cierre'], c: 1 },
                             { p: 'Presentas tu idea y alguien dice «no lo veo claro». ¿Qué parte de PREP te conviene reforzar primero?', o: ['El ejemplo o dato', 'El saludo', 'El volumen de voz'], c: 0 }
                         ] },
-                    { t: 'Escucha y responde objeciones' }, { t: 'Habla frente a un grupo' }
+                    { t: 'Escucha y responde objeciones' }, { t: 'Coordínate con tu equipo' }
                 ] },
-            liderazgo: { nombre: 'Liderazgo en la práctica', comp: 'Liderazgo', semanas: 8,
-                desc: 'Coordina personas, da retroalimentación y toma decisiones con tu equipo.',
-                modulos: [{ t: 'Conócete como líder' }, { t: 'Conversaciones difíciles' }, { t: 'Decidir en equipo' }] },
-            pensamiento: { nombre: 'Pensamiento crítico', comp: 'Pensamiento crítico', semanas: 6,
-                desc: 'Distingue datos de opiniones, cuestiona supuestos y argumenta con evidencia.',
-                modulos: [{ t: 'Dato, opinión o supuesto' }, { t: 'Evalúa fuentes' }, { t: 'Argumenta con evidencia' }] },
-            problemas: { nombre: 'Resolver problemas reales', comp: 'Resolución de problemas', semanas: 6,
-                desc: 'Define problemas, encuentra causas y prueba soluciones pequeñas.',
-                modulos: [{ t: 'Define el problema' }, { t: 'Encuentra causas' }, { t: 'Prueba y aprende' }] }
+            adaptabilidad: { nombre: 'Adaptabilidad y disposición para aprender', comp: 'Adaptabilidad y disposición para aprender', semanas: 6,
+                desc: 'Ajústate a los cambios e incorpora nuevas formas de trabajar sin perder el rumbo.',
+                modulos: [{ t: 'Del cambio a la oportunidad' }, { t: 'Aprende algo nuevo cada semana' }, { t: 'Pide y usa retroalimentación' }] },
+            pensamiento: { nombre: 'Pensamiento crítico y resolución de problemas', comp: 'Pensamiento crítico y resolución de problemas', semanas: 6,
+                desc: 'Evalúa información, compara alternativas y justifica tus decisiones.',
+                modulos: [{ t: 'Dato, opinión o supuesto' }, { t: 'Compara alternativas' }, { t: 'Justifica tu decisión' }] },
+            liderazgo: { nombre: 'Liderazgo e influencia', comp: 'Liderazgo e influencia', semanas: 8,
+                desc: 'Moviliza a otras personas hacia un objetivo común, incluso sin un cargo formal.',
+                modulos: [{ t: 'Influye sin cargo' }, { t: 'Conversaciones difíciles' }, { t: 'Decidir en equipo' }] }
         };
         Plataforma.DISPONIBLE = 'comunicacion';
         Plataforma.PESTANAS = ['Autónomo', 'Comunidad', 'Aplicación', 'Evaluación'];
@@ -307,15 +344,25 @@ var Zip;
         ];
         const DIAS_RIESGO = 7;
         /* ---------- Estado de esta sesión ---------- */
-        const CLAVE = 'zip2';
+        /** Cada usuario tiene su propio progreso en la sesión: zip2:<usuario>. */
+        const clave = (id) => `zip2:${id || 'invitado'}`;
+        let CLAVE = clave(Zip.Auth.actual()?.id ?? null);
         const base = () => ({ exp: null, contexto: '', tab: 0, hecho: [false, false, false, false], chatTutor: [], bitacora: [], evalResp: [], autoeval: 0, reflexion: '', reto: '', retoHecho: false, card: null, bajo: false, camino: {}, tarjetas: {}, repasos: 0, buenas: 0, dias: [] });
         /** El estado vivo (la VIEW solo lo lee). */
         Plataforma.estado = Object.assign(base(), Zip.Memoria.leer(CLAVE) || {});
         const S = Plataforma.estado;
         const guardar = () => Zip.Memoria.escribir(CLAVE, S);
+        /** Al entrar o salir cambia de usuario: se carga su progreso (o uno vacío). */
+        function cambiarUsuario(id) {
+            CLAVE = clave(id);
+            for (const k of Object.keys(S))
+                delete S[k];
+            Object.assign(S, base(), Zip.Memoria.leer(CLAVE) || {});
+        }
+        Plataforma.cambiarUsuario = cambiarUsuario;
         /* ---------- Consultas ---------- */
         Plataforma.experiencia = (k) => Plataforma.EXP[k] || null;
-        Plataforma.actual = () => (S.exp ? Plataforma.EXP[S.exp] : null);
+        Plataforma.actual = () => (S.exp ? Plataforma.experiencia(S.exp) : null);
         Plataforma.avance = () => S.hecho.filter(Boolean).length;
         Plataforma.evidencias = () => S.bitacora.filter(x => x.de === 'yo');
         Plataforma.fechaLarga = (d) => d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -333,7 +380,7 @@ var Zip;
                 return false;
             Object.assign(S, base(), {
                 bajo: S.bajo, bitacora: S.bitacora, iaViva: S.iaViva,
-                exp: k, contexto, reto: Plataforma.EXP[k].modulos[0].retos[contexto],
+                exp: k, contexto, reto: Plataforma.experiencia(k).modulos[0].retos[contexto],
                 ruta: [], rub: [], coachOK: false, coachNota: 0, coachComent: '', proxRepaso: null, aciertos: undefined
             });
             guardar();
@@ -488,7 +535,7 @@ var Zip;
            Tablero de la experiencia: camino de aprendizaje, situaciones y flashcards
            ===================================================================== */
         /** Enlace del video de introducción (YouTube). Pégalo aquí cuando lo tengas. */
-        const VIDEO_INTRO = '';
+        const VIDEO_INTRO = 'https://youtu.be/t-ULWDQ2t8c?si=UmBz5lsHE75Q7XvY';
         Plataforma.CAMINO = [
             { n: 1, tipo: 'Video', titulo: 'Introducción a la comunicación', resumen: 'Un video corto para entender qué es comunicar bien y por qué pesa tanto en el trabajo.' },
             { n: 2, tipo: 'Casos', titulo: 'Situaciones donde la comunicación es clave', resumen: 'Casos del trabajo y de la vida diaria, con el mejor camino para resolverlos.' },
@@ -631,4 +678,81 @@ var Zip;
         } return Boolean(S.bajo); }
         Plataforma.bajoEstimulo = bajoEstimulo;
     })(Plataforma = Zip.Plataforma || (Zip.Plataforma = {}));
+})(Zip || (Zip = {}));
+/* =====================================================================
+   Zip.Diagnostico · conocer a la persona y armar su camino
+   ---------------------------------------------------------------------
+   Las preguntas del zorro, la llamada al backend (/api/analizar-voz, que
+   habla con Gemini) y las reglas para ordenar las 5 experiencias de la más
+   urgente a la más opcional. El perfil se guarda solo en esta sesión.
+   ===================================================================== */
+(function (Zip) {
+    var Diagnostico;
+    (function (Diagnostico) {
+        /** El nivel sale del lugar en el camino: 1.º urgente … 5.º opcional. */
+        Diagnostico.NIVELES = ['urgente', 'alta', 'media', 'baja', 'opcional'];
+        Diagnostico.NOMBRE_NIVEL = { urgente: 'Urgente', alta: 'Prioridad alta', media: 'Prioridad media', baja: 'Prioridad baja', opcional: 'Opcional' };
+        /** Lo que pregunta el zorro: 3 preguntas que cubren el perfil, la meta y las 5 competencias. */
+        Diagnostico.PREGUNTAS = [
+            { id: 'perfil-y-meta', texto: 'Para empezar, cuéntame de ti: ¿cuántos años tienes, a qué te dedicas y qué te gustaría lograr este año?' },
+            { id: 'equipo', texto: 'Cuéntame de la última vez que trabajaste con otras personas en algo difícil: ¿qué papel tomaste, cómo se pusieron de acuerdo y qué hiciste cuando algo no salió como esperaban?' },
+            { id: 'cambios-y-decisiones', texto: 'Por último: ¿qué cambio o decisión importante te tocó enfrentar hace poco? ¿Cómo comparaste tus opciones y qué aprendiste?' }
+        ];
+        /** Camino de la cuenta de prueba (Pedro Paramo ya hizo su diagnóstico). */
+        const PERFIL_DEMO = {
+            meta: 'Crecer en tu trabajo y coordinar proyectos con tu equipo', contexto: 'En mi trabajo',
+            competencias: [
+                { id: 'comunicacion', prioridad: 1, nivel: 'urgente', dominio: 38, enfoque: 'Defender tus ideas en juntas con datos y ejemplos concretos.' },
+                { id: 'liderazgo', prioridad: 2, nivel: 'alta', dominio: 45, enfoque: 'Coordinar a tu equipo sin necesidad de un cargo formal.' },
+                { id: 'pensamiento', prioridad: 3, nivel: 'media', dominio: 58, enfoque: 'Comparar opciones antes de decidir y explicar por qué.' },
+                { id: 'adaptabilidad', prioridad: 4, nivel: 'baja', dominio: 70, enfoque: 'Aprender herramientas nuevas sin frenar tu ritmo.' },
+                { id: 'profesionalismo', prioridad: 5, nivel: 'opcional', dominio: 82, enfoque: 'Mantener tus acuerdos aun en semanas pesadas.' }
+            ]
+        };
+        const clave = () => `zip-perfil:${Zip.Auth.actual()?.id}`;
+        function perfil() {
+            const u = Zip.Auth.actual();
+            if (!u)
+                return null;
+            return Zip.Memoria.leer(clave()) || (u.id === Zip.Auth.comparable(Zip.Auth.DEMO.usuario) ? PERFIL_DEMO : null);
+        }
+        Diagnostico.perfil = perfil;
+        /** Ordena y valida lo que manda Gemini: las 5 competencias, una vez cada una, de la más urgente a la más opcional. */
+        function normalizar(crudo) {
+            const ids = Zip.Modelo.EXPERIENCIAS.map(e => e.id);
+            const lista = Array.isArray(crudo?.competencias) ? crudo.competencias : [];
+            const comps = ids.map(id => {
+                const c = lista.find(x => x && x.id === id) || {};
+                const dominio = Math.max(0, Math.min(100, Math.round(Number(c.dominio) || 50)));
+                return { id, prioridad: Number(c.prioridad) || 99, dominio, enfoque: String(c.enfoque || '').slice(0, 160) };
+            }).sort((a, b) => a.prioridad - b.prioridad || a.dominio - b.dominio);
+            return {
+                meta: String(crudo?.meta || '').slice(0, 160),
+                contexto: Zip.Plataforma.CONTEXTOS.includes(crudo?.contexto) ? crudo.contexto : '',
+                competencias: comps.map((c, i) => ({ ...c, prioridad: i + 1, nivel: Diagnostico.NIVELES[i] }))
+            };
+        }
+        Diagnostico.normalizar = normalizar;
+        /** Manda las respuestas de voz al backend; Gemini devuelve el perfil y se guarda. */
+        async function analizar(respuestas) {
+            const datos = new FormData();
+            datos.append('preguntas', JSON.stringify(Diagnostico.PREGUNTAS));
+            respuestas.forEach(r => datos.append(`audio:${r.pregunta}`, r.audio, `${r.pregunta}.webm`));
+            const r = await fetch('/api/analizar-voz', { method: 'POST', body: datos });
+            const j = await r.json().catch(() => null);
+            if (!r.ok || !j || !j.ok)
+                throw new Error((j && j.error) || `El servidor respondió ${r.status}`);
+            const p = normalizar(j.perfil);
+            Zip.Memoria.escribir(clave(), p);
+            return p;
+        }
+        Diagnostico.analizar = analizar;
+        /** Las 5 experiencias en el orden del camino (si no hay diagnóstico, en el orden del catálogo). */
+        function ruta() {
+            const p = perfil();
+            const ids = p ? p.competencias.map(c => c.id) : Zip.Modelo.EXPERIENCIAS.map(e => e.id);
+            return ids.map(id => ({ id, exp: Zip.Plataforma.EXP[id], c: p ? p.competencias.find(c => c.id === id) : null }));
+        }
+        Diagnostico.ruta = ruta;
+    })(Diagnostico = Zip.Diagnostico || (Zip.Diagnostico = {}));
 })(Zip || (Zip = {}));

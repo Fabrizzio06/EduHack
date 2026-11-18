@@ -2,13 +2,16 @@
   "name": "zip-eduhack",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": ">=22" },
   "description": "Zip · plataforma de aprendizaje experiencial (Social EduHack 2026). Sitio estático en MVC con TypeScript.",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && tsc -p server",
     "watch": "tsc -p . --watch",
-    "typecheck": "tsc -p . --noEmit"
+    "start": "node dist/server/servidor.mjs",
+    "typecheck": "tsc -p . --noEmit && tsc -p server --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.9.3"
   }
 }

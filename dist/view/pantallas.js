@@ -25,37 +25,41 @@ var Zip;
             const pre = (t) => `<p class="eti mono">${t}</p>`;
             const dientes = (n, total = 4) => `<div class="z-dientes" style="--n:${total}" aria-hidden="true">${Array.from({ length: total }, (_, i) => `<span class="${i < n ? 'on' : (i === n ? 'ahora' : '')}"></span>`).join('')}</div>`;
             const ICONO_MATERIAL = { 'Lectura': 'libro', 'Video': 'video', 'Pódcast': 'audio' };
-            const color = (P, k) => `t${(Object.keys(P.EXP).indexOf(k) % 4) + 1}`;
+            /** La portada toma el color del nivel de prioridad; sin diagnóstico, el naranja de Zip. */
+            const color = (k) => { const p = Zip.Diagnostico.perfil(), c = p && p.competencias.find(x => x.id === k); return c ? `nv-${c.nivel}` : 't2'; };
             const datos = (e) => `<p class="z-datos mono">${e.semanas} semanas · ${e.modulos.length} módulos · coach asignado</p>`;
-            /* ---------- Entrar (login con la cuenta de prueba) ---------- */
-            function login(demo) {
+            /* ---------- Entrar y crear cuenta (misma pantalla, dos modos) ---------- */
+            function cuenta(modo, demo) {
+                const reg = modo === 'registro';
                 return `<section class="z-login contenedor">
       <div class="z-login-caja">
         <aside class="z-login-arte" aria-hidden="true">
           ${mascota('saludar', 'redonda z-login-zorro')}
           <p class="mono">Aprende. Aplica. Demuestra.</p>
-          <ol class="z-login-pasos"><li><b>1</b>Elige tu experiencia</li><li><b>2</b>Aplícala en tu realidad</li><li><b>3</b>Demuéstralo con evidencia</li></ol>
+          <ol class="z-login-pasos"><li><b>1</b>${reg ? 'Platica con el zorro' : 'Elige tu experiencia'}</li><li><b>2</b>${reg ? 'Recibe tu camino a tu medida' : 'Aplícala en tu realidad'}</li><li><b>3</b>Demuéstralo con evidencia</li></ol>
         </aside>
         <form class="z-login-form" id="z-login" novalidate>
-          <header class="z-cab">${pre('Entrar a Zip')}<h1>Qué bueno verte.</h1><p>Entra con tu cuenta para elegir tu experiencia y seguir tu camino.</p></header>
+          <header class="z-cab">${pre(reg ? 'Crear cuenta' : 'Entrar a Zip')}<h1>${reg ? 'Empecemos.' : 'Qué bueno verte.'}</h1>
+            <p>${reg ? 'Solo necesitas un usuario y una contraseña. Después el zorro te hará unas preguntas para armar tu camino.' : 'Entra con tu cuenta para elegir tu experiencia y seguir tu camino.'}</p></header>
           <div class="z-campo"><label for="z-usuario">Usuario</label>
-            <input id="z-usuario" name="usuario" type="text" autocomplete="username" autocapitalize="words" spellcheck="false" placeholder="Tu nombre de usuario" required></div>
+            <input id="z-usuario" name="usuario" type="text" autocomplete="username" autocapitalize="words" spellcheck="false" placeholder="${reg ? 'Elige tu nombre de usuario' : 'Tu nombre de usuario'}" required></div>
           <div class="z-campo"><label for="z-clave">Contraseña</label>
-            <div class="z-clave"><input id="z-clave" name="clave" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+            <div class="z-clave"><input id="z-clave" name="clave" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}" placeholder="${reg ? 'Crea una contraseña' : 'Tu contraseña'}" required>
               <button type="button" class="z-clave-ver" id="z-ver-clave" aria-pressed="false" aria-controls="z-clave">Mostrar</button></div></div>
           <p class="z-login-error" id="z-login-error" role="alert"></p>
-          <button class="btn btn-principal z-login-entrar" type="submit" data-ripple>Entrar ${flecha}</button>
+          <button class="btn btn-principal z-login-entrar" type="submit" data-ripple>${reg ? 'Crear mi cuenta' : 'Entrar'} ${flecha}</button>
           <div class="z-demo">
-            <div><span class="mono">Cuenta de prueba</span>
+            <div><span class="mono">${reg ? 'Datos de prueba' : 'Cuenta de prueba'}</span>
               <p>Usuario <code>${esc(demo.usuario)}</code> · Contraseña <code>${esc(demo.clave)}</code></p></div>
-            <button type="button" class="btn btn-sec btn-chico" id="z-rellenar" data-ripple>Usar esta cuenta</button>
+            <button type="button" class="btn btn-sec btn-chico" id="z-rellenar" data-ripple>Usar estos datos</button>
           </div>
-          <p class="z-nota">Prototipo sin base de datos: tu sesión y tu progreso viven solo en esta pestaña y se borran al cerrarla.</p>
+          <p class="z-cambiar">${reg ? '¿Ya tienes cuenta? <a href="#login">Entra aquí</a>' : '¿Eres nuevo? <a href="#registro">Crea tu cuenta</a>'}</p>
+          <p class="z-nota">Prototipo sin base de datos: tu cuenta, tu sesión y tu progreso viven solo en esta pestaña y se borran al cerrarla.</p>
         </form>
       </div>
     </section>`;
             }
-            Pantallas.login = login;
+            Pantallas.cuenta = cuenta;
             /** Lo que se ve en el encabezado: quién entró y el botón para salir (o el enlace para entrar). */
             function sesion(u) {
                 if (!u)
@@ -64,31 +68,38 @@ var Zip;
       <button type="button" class="z-sesion-salir" id="z-salir">Salir</button>`;
             }
             Pantallas.sesion = sesion;
-            /* ---------- Experiencias ---------- */
+            /* ---------- Experiencias: el camino hecho a tu medida (lo ordena Gemini) ---------- */
+            const nivelHTML = (n) => `<span class="z-nivel nv-${n}">${Zip.Diagnostico.NOMBRE_NIVEL[n]}</span>`;
             function experiencias(P) {
+                const perfil = Zip.Diagnostico.perfil(), ruta = Zip.Diagnostico.ruta();
                 return `<section class="z-pagina contenedor">
-      ${cab('Elige tu experiencia.', 'Diseñadas por especialistas en educación y expertos en cada competencia. Más largas y completas que un curso, y con un coach asignado.', pre('Catálogo'))}
-      <div class="z-exps">${Object.entries(P.EXP).map(([k, e]) => {
-                    const disp = k === P.DISPONIBLE;
-                    return `<a class="tarjeta-exp ${color(P, k)}" href="#exp/${k}">
-          <div class="banda"><span class="mono">${esc(e.comp)}</span><h2>${esc(e.nombre)}</h2></div>
-          <div class="cuerpo"><p>${esc(e.desc)}</p>${datos(e)}
-            <div class="z-pie-tarjeta">${disp ? etiqueta('Disponible', 'disponible') : etiqueta('Vista previa', 'vista')}<span class="z-ver">Ver ${flecha}</span></div></div></a>`;
-                }).join('')}</div></section>`;
+      ${cab(perfil ? 'Tu camino, a tu medida.' : 'Las cinco experiencias de Zip.', perfil ? `Ordenamos las cinco experiencias según lo que nos contaste${perfil.meta ? `, para ${esc(perfil.meta.charAt(0).toLowerCase() + perfil.meta.slice(1)).replace(/\.$/, '')}` : ''}. Empieza por la primera.`
+                    : 'Platica un momento con el zorro y ordenamos las experiencias según lo que más necesitas.', pre(perfil ? 'Hecho a tu medida' : 'Catálogo'))}
+      ${perfil ? `<div class="z-leyenda" aria-label="De más urgente a más opcional">${Zip.Diagnostico.NIVELES.map(n => `<span class="nv-${n}"></span>`).join('')}<p class="mono"><span>Más urgente</span><span>Más opcional</span></p></div>`
+                    : `<div class="z-continuar"><div>${pre('Aún no te conocemos')}<h2>Arma tu camino en un minuto</h2><p class="z-nota">Contesta ${Zip.Diagnostico.PREGUNTAS.length} preguntas con tu voz.</p></div><a class="btn btn-principal" href="#conocerte" data-ripple>Empezar ${flecha}</a></div>`}
+      <ol class="z-ruta">${ruta.map(({ id, exp, c }, i) => `<li class="z-ruta-paso ${c ? 'nv-' + c.nivel : 'nv-sin'}" style="--i:${i}">
+        <span class="z-ruta-num" aria-hidden="true">${i + 1}</span>
+        <a class="z-ruta-tarjeta${i === 0 && c ? ' z-destacada' : ''}" href="#exp/${id}">
+          <div class="z-ruta-cuerpo">${c ? nivelHTML(c.nivel) : ''}<h2>${esc(exp.nombre)}</h2>
+            <p>${esc(c && c.enfoque ? c.enfoque : exp.desc)}</p>${datos(exp)}</div>
+          <span class="z-ruta-fin">${id === P.DISPONIBLE ? etiqueta('Disponible', 'disponible') : etiqueta('Vista previa', 'vista')}<span class="z-ver">Ver ${flecha}</span></span></a></li>`).join('')}</ol>
+      ${perfil ? '<p class="z-nota z-rehacer">¿Cambiaron tus metas? <a href="#conocerte">Vuelve a platicar con el zorro</a> y reordenamos tu camino.</p>' : ''}
+    </section>`;
             }
             Pantallas.experiencias = experiencias;
             /* ---------- Detalle e inscripción ---------- */
             function detalle(k, e, P) {
                 const disp = k === P.DISPONIBLE;
+                const perfil = Zip.Diagnostico.perfil(), c = perfil ? perfil.competencias.find(x => x.id === k) : null;
                 return `<section class="z-pagina contenedor">
-      <a class="z-volver" href="#experiencias">${ic('atras')} Experiencias</a>
-      <div class="z-portada ${color(P, k)}"><span class="mono">${esc(e.comp)}</span><h1>${esc(e.nombre)}</h1><p>${esc(e.desc)}</p>${datos(e)}</div>
+      <a class="z-volver" href="#experiencias">${ic('atras')} Mi camino</a>
+      <div class="z-portada ${color(k)}"><span class="mono">${esc(e.comp)}</span>${c ? nivelHTML(c.nivel) : ''}<h1>${esc(e.nombre)}</h1><p>${esc(c && c.enfoque ? c.enfoque : e.desc)}</p>${datos(e)}</div>
       <div class="z-dos">
         <div class="z-tarjeta"><h2 class="z-h">Módulos</h2>
           <ol class="z-modulos">${e.modulos.map((m, i) => `<li class="${i === 0 ? 'abierto' : ''}"><span class="z-hito">${i === 0 ? i + 1 : ic('candado')}</span><div><strong>Módulo ${i + 1}. ${esc(m.t)}</strong><span>${i === 0 ? 'Autónomo · comunidad · aplicación · evaluación' : 'Se abre al terminar el anterior'}</span></div></li>`).join('')}</ol></div>
         <div class="z-tarjeta z-destacada"><h2 class="z-h">Inscríbete</h2>
           <div class="z-campo"><label for="z-ctx">¿Dónde quieres aplicar esta competencia?</label>
-            <select id="z-ctx"><option value="">Elige una opción</option>${P.CONTEXTOS.map(o => `<option>${o}</option>`).join('')}</select></div>
+            <select id="z-ctx"><option value="">Elige una opción</option>${P.CONTEXTOS.map(o => `<option${perfil && perfil.contexto === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div>
           <p class="z-nota">Tu coach diseña los retos para ese lugar: así aplicas en tu realidad.</p>
           <button class="btn btn-principal" id="z-ins" disabled data-ripple>${disp ? 'Inscribirme' : 'Disponible pronto'}</button></div>
       </div></section>`;
@@ -203,7 +214,7 @@ var Zip;
                 const S = P.estado, g = P.grupoCoach(), listo = S.exp && S.hecho.every(Boolean);
                 const yo = g.length && S.exp ? g[0].nombre : 'Tú (esta sesión)';
                 return `<section class="z-pagina contenedor">
-      ${cab('Panel del coach', 'Así ve el coach a su grupo de la experiencia «Comunicación que convence». Los participantes A a E son ejemplos.', pre('Vista de demostración'))}
+      ${cab('Panel del coach', 'Así ve el coach a su grupo de la experiencia «Comunicación y trabajo en equipo». Los participantes A a E son ejemplos.', pre('Vista de demostración'))}
       <div class="tabla-caja"><table class="z-tabla"><thead><tr><th scope="col">Participante</th><th scope="col">Dónde aplica</th><th scope="col">Módulo 1</th><th scope="col">Bitácora</th><th scope="col">Última actividad</th></tr></thead><tbody>
       ${g.map(p => `<tr class="${p.riesgo ? 'riesgo' : ''}"><th scope="row">${esc(p.nombre)}</th><td>${esc(p.donde)}</td>
         <td><div class="z-avance">${dientes(p.mod).replace('z-dientes', 'z-dientes mini')}<span>${p.mod} de 4</span></div></td>
