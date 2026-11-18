@@ -1,0 +1,14 @@
+{
+  "name": "zip-eduhack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zip · plataforma de aprendizaje experiencial (Social EduHack 2026). Sitio estático en MVC con TypeScript.",
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -p . --watch",
+    "typecheck": "tsc -p . --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

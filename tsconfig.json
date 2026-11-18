@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "rootDir": ".",
+    "outDir": "dist",
+    "strict": true,
+    "strictNullChecks": false,
+    "noUnusedLocals": true,
+    "removeComments": false,
+    "newLine": "lf",
+    "skipLibCheck": true
+  },
+  "include": ["model/**/*.ts", "view/**/*.ts", "controller/**/*.ts", "tipos.d.ts"]
+}
